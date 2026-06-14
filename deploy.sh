@@ -52,6 +52,20 @@ check_env() {
     fi
 }
 
+# .env 의 DATA_DIR 값 읽기 (기본: 스크립트 폴더)
+get_data_dir() {
+    local d
+    d="$(grep -E '^DATA_DIR=' .env 2>/dev/null | cut -d= -f2-)"
+    echo "${d:-$SCRIPT_DIR}"
+}
+
+# bind mount 대상 디렉토리 미리 생성
+# (Synology docker 는 일반 docker 와 달리 없는 호스트 경로를 자동 생성하지 않음)
+ensure_dirs() {
+    local data_dir; data_dir="$(get_data_dir)"
+    mkdir -p "${data_dir}/music-assistant/data" "${data_dir}/homeassistant/config"
+}
+
 # 이미지 풀
 pull_images() {
     print_header "📥 GHCR 공식 이미지 풀"
@@ -63,6 +77,7 @@ pull_images() {
 deploy() {
     print_header "🚀 Music Assistant 배포"
     check_env
+    ensure_dirs
     echo -e "${YELLOW}컨테이너 시작 중...${NC}"
     $DC -f ${COMPOSE_FILE} up -d --remove-orphans
     print_success "배포 완료!"
@@ -83,6 +98,7 @@ update() {
 start() {
     print_header "▶️  Music Assistant 시작"
     check_env
+    ensure_dirs
     $DC -f ${COMPOSE_FILE} up -d
     print_success "시작 완료!"
     status
@@ -130,10 +146,8 @@ logs() {
 # 백업 (MA data + HA config)
 backup() {
     print_header "💾 설정 백업"
-    # .env 의 DATA_DIR 을 읽어 백업 대상 결정 (기본: 스크립트 폴더)
-    local data_dir
-    data_dir="$(grep -E '^DATA_DIR=' .env 2>/dev/null | cut -d= -f2-)"
-    data_dir="${data_dir:-$SCRIPT_DIR}"
+    # .env 의 DATA_DIR 을 읽어 백업 대상 결정
+    local data_dir; data_dir="$(get_data_dir)"
 
     mkdir -p backups
     local backup_file="backups/ma_backup_$(date +%Y%m%d_%H%M%S).tar.gz"
