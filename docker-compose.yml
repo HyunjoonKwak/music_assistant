@@ -1,0 +1,46 @@
+services:
+  # =========================================================================
+  # Music Assistant Server
+  # - network_mode: host 필수 (mDNS/UPnP 기반 플레이어 자동 검색 + 스트리밍)
+  #   → Chromecast/Sonos/AirPlay/DLNA·UPnP/WiiM/Bluesound/Squeezelite 모두
+  #     이 host 네트워크 덕분에 별도 포트 설정 없이 자동 검색됨.
+  #     (플레이어는 MA UI의 Settings → Providers 에서 켜서 사용)
+  # - cap_add / apparmor: SMB/NFS 원격 공유를 컨테이너 내부에서 마운트하기 위함
+  # - Web UI: http://<NAS_IP>:8095   (스트리밍 포트: 8097)
+  # =========================================================================
+  music-assistant-server:
+    image: ghcr.io/music-assistant/server:latest
+    container_name: music-assistant-server
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      # MA 설정/DB 영구 저장 (절대 삭제 금지)
+      - ${DATA_DIR}/music-assistant/data:/data/
+      # NAS 로컬 음악 라이브러리 (읽기 전용으로 노출)
+      - ${MUSIC_DIR}:/media/music:ro
+    cap_add:
+      - SYS_ADMIN
+      - DAC_READ_SEARCH
+    security_opt:
+      - apparmor:unconfined
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - TZ=${TZ:-Asia/Seoul}
+
+  # =========================================================================
+  # Home Assistant (선택 — MA와 통합해 자동화/대시보드에서 음악 제어)
+  # - network_mode: host 권장 (기기 자동 검색)
+  # - Web UI: http://<NAS_IP>:8123
+  # =========================================================================
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
+    volumes:
+      - ${DATA_DIR}/homeassistant/config:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    environment:
+      - TZ=${TZ:-Asia/Seoul}

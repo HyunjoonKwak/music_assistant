@@ -1,0 +1,22 @@
+# 환경변수 (비밀/경로 — 커밋 금지)
+.env
+
+# 런타임 데이터 (컨테이너가 생성, 영구 보관 대상이지 git 대상 아님)
+music-assistant/
+homeassistant/
+data/
+
+# 백업
+backups/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / 에디터
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
