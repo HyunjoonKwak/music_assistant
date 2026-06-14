@@ -6,6 +6,10 @@
 
 set -e
 
+# Synology: ContainerManager docker 는 /usr/local/bin 에 있는데 sudo PATH 에 없어
+# 명령을 못 찾는 경우가 있다. PATH 를 보강해 항상 docker 를 찾도록 한다.
+export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+
 # 색상 코드
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
